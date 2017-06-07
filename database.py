@@ -1,10 +1,10 @@
-#!/usr/bin/python
-import MySQLdb, datetime, httplib, json, os
+#!/usr/bin/python3
+import MySQLdb, datetime, http.client, json, os
 # requires MySQLdb python 2 library which is not ported to python 3 yet
 class mysql_database:
     def __init__(self):
-    	credentials_file = os.path.join(os.path.dirname(__file__), "credentials.mysql")
-    	f = open(credentials_file, "r")
+        credentials_file = os.path.join(os.path.dirname(__file__), "credentials.mysql")
+        f = open(credentials_file, "r")
         credentials = json.load(f)
         f.close()
         for key, value in credentials.items(): #remove whitespace
@@ -33,7 +33,7 @@ class oracle_apex_database:
     def __init__(self, path, host = "apex.oracle.com"):
         self.host = host
         self.path = path
-        self.conn = httplib.HTTPSConnection(self.host)
+        self.conn = http.client.HTTPSConnection(self.host)
         self.credentials = None
         credentials_file = os.path.join(os.path.dirname(__file__), "credentials.oracle")
         
@@ -71,7 +71,10 @@ class oracle_apex_database:
 
     def https_post(self, data, attempts = 3):
         attempt = 0
-        headers = dict(self.default_data.items() + self.credentials.items() + data.items())
+        #headers = dict(self.default_data.items() + self.credentials.items() + data.items())
+        headers = self.default_data.copy()
+        headers.update( self.credentials) 
+        headers.update( data)
         success = False
         response_data = None
 
@@ -147,9 +150,10 @@ class weather_database:
                     row["WIND_GUST_SPEED"], 
                     row["RAINFALL"], 
                     row["CREATED"].strftime("%Y-%m-%dT%H:%M:%S"))
-
+                print(response_data)
                 if response_data != None and response_data != "-1":
-                    json_dict = json.loads(response_data)
+                    str_response = response_data.decode('utf-8') # 
+                    json_dict = json.loads(str_response)
                     oracle_id = json_dict["ORCL_RECORD_ID"]
                     if self.is_number(oracle_id):
                         local_id = str(row["ID"])
